@@ -4,8 +4,8 @@ const PostSchema = new Schema(
   {
     title: { type: String, require: true },
     summary: { type: String, require: true },
-    Content: { type: String, require: true },
-    Cover: { type: String, require: true },
+    content: { type: String, require: true },
+    cover: { type: String, require: true },
     author: { type: Schema.Types.ObjectId, ref: "User", require: true },
   },
   {
@@ -13,5 +13,5 @@ const PostSchema = new Schema(
   }
 );
 
-const PostModel = new Model("Post", PostSchema);
+const PostModel = model("Post", PostSchema);
 module.exports = PostModel;

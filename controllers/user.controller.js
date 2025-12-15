@@ -36,4 +36,40 @@ exports.register = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {};
+exports.login = async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).send({
+      message: "Please Provide Username and Password!",
+    });
+  }
+  try {
+    const userDoc = await UserModel.findOne({ username });
+    if (!userDoc) {
+      return res.status(404).send({ message: "User not found!" });
+    }
+    const isPasswordMatched = bcrypt.compareSync(password, userDoc.password);
+    if (!isPasswordMatched) {
+      return res.status(401).send({ message: "Invalid Credentials!" });
+    }
+    //Login successfully!
+    jwt.sign({ username, id: userDoc._id }, secret, {}, (err, token) => {
+      if (err) {
+        return res
+          .status(500)
+          .send({ message: "Internal Server Error: Authentication failed!" });
+      }
+      //token generation
+      res.send({
+        message: "User logged in successfully!",
+        id: userDoc._id,
+        username,
+        accessToken: token,
+      });
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: error.message || "Some errors occured while logging in user!",
+    });
+  }
+};

@@ -2,6 +2,8 @@ const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
 const mongoose = require("mongoose");
+const userRouter = require("./routers/user.router");
+const postRouter = require("./routers/post.router");
 
 const app = express();
 const PORT = process.env.PORT;
@@ -27,6 +29,9 @@ if (!DB_URL) {
       console.error("MongoDB connection error:", error);
     });
 }
+//use Router
+app.use("/api/v1/user", userRouter);
+app.use("/api/v1/post", postRouter);
 
 app.listen(PORT, () => {
   console.log("Server is running on http://localhost:" + PORT);
