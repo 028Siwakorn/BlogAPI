@@ -1,8 +1,12 @@
 const PostModel = require("../models/Post");
 
 exports.createPost = async (req, res) => {
-  const { title, summary, content, cover, author } = req.body;
-  if (!title || !summary || !content || !cover || !author) {
+  if (!req.file) {
+    return res.status(400).json({ message: "Image is required!" });
+  }
+  const { title, summary, content } = req.body;
+  const authorId = req.authorId;
+  if (!title || !summary || !content ) {
     return res.status(400).send({
       message:
         "Please Provide title, summary, content, cover image and author !",
@@ -13,8 +17,8 @@ exports.createPost = async (req, res) => {
       title,
       summary,
       content,
-      cover,
-      author,
+      cover: req.file.firebaseUrl,
+      author: authorId,
     });
     if (!postDoc) {
       return res.status(500).send({
@@ -101,24 +105,35 @@ exports.getByAuthorId = async (req, res) => {
 
 exports.updateById = async (req, res) => {
   const id = req.params.id;
+  const authorId = req.authorId;
   if (!id) {
     return res.status(400).send({
       message: "ID is missing!",
     });
   }
+  const { title, summary, content, cover } = req.body;
+  if (!title || !summary || !content || !cover) {
+    return res.status(400).send({ message: "Please provide all required!" });
+  }
   try {
-    const updatedPost = await PostModel.findByIdAndUpdate(id, req.body, {
-      new: true,
-    });
-    if (!updatedPost) {
-      return res.status(404).send({
-        message: "Post Not found!",
+    const postDoc = await PostModel.findOne({ _id: id, author: authorId });
+    if (!postDoc) {
+      return res.status.send({
+        message: "Post with this author id is not found!",
       });
     }
-    return res.status(200).send({
-      message: "Post updated successfully!",
-      data: updatedPost,
-    });
+    if (postDoc.length === 0) {
+      return res
+        .status(403)
+        .send({ message: "Unauthorized to edit this post" });
+    } else {
+      postDoc.title = title;
+      postDoc.summary = summary;
+      postDoc.content = content;
+      postDoc.cover = cover;
+      await postDoc.save();
+      res.send({ message: "Post updated successfully!", data: postDoc });
+    }
   } catch (error) {
     return res.status(500).send({
       message: error.message || "Some error occurred while updating the post.",
@@ -128,6 +143,7 @@ exports.updateById = async (req, res) => {
 
 exports.deleteById = async (req, res) => {
   const id = req.params.id;
+  console.log(id);
   if (!id) {
     return res.status(400).send({
       message: "ID is missing!",
